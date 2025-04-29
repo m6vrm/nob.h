@@ -21,3 +21,4 @@ Usage
     cd example
     cc -o nob nob.c
     ./nob
+    ./build/example
