@@ -26,9 +26,9 @@
 
 #ifdef __cplusplus
 #define DECLTYPE(expr) (decltype(expr))
-#else
+#else  // __cplusplus
 #define DECLTYPE(expr)
-#endif
+#endif  // __cplusplus
 
 #define RETURN_DEFER(value) \
     do {                    \
@@ -132,11 +132,11 @@ bool fs_current_dir(char* dst, size_t size);
                         ARRAY_COUNT(ARRAY(const char*, __FILE__, __VA_ARGS__)))
 void rebuild_myself_many(int argc, char* argv[], const char** srcs, size_t srcs_count);
 
-#ifndef TMP_BUFFER_CAP
-#define TMP_BUFFER_CAP 8 * 1024 * 1024
+#ifndef TMP_BUF_CAP
+#define TMP_BUF_CAP 8 * 1024 * 1024
 #endif  // TMP_BUF_CAP
 static struct {
-    char buf[TMP_BUFFER_CAP];
+    char buf[TMP_BUF_CAP];
     size_t size;
 } tmp;
 void* tmp_alloc(size_t size);
