@@ -12,17 +12,12 @@ const char* CFLAGS[] = {
     "-g",          //
 };
 
-const char* env(const char* name, const char* fallback) {
-    const char* env = getenv(name);
-    return env == NULL ? fallback : env;
-}
-
-const char* CC;
-
 int main(int argc, char* argv[]) {
     rebuild_myself(argc, argv);
 
-    CC = env("CC", "cc");
+    const char* CC = getenv("CC");
+    CC = CC == NULL ? "cc" : CC;
+
     Cmd cmd = {0};
 
     log_print("build");
