@@ -1,5 +1,4 @@
-// idea stolen from https://github.com/tsoding/nob.h
-
+// https://github.com/m6vrm/nob.h
 #pragma once
 
 #include <assert.h>

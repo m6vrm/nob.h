@@ -18,6 +18,11 @@ Features
 Usage
 -----
 
+Copy `nob.h` to your project and implement `nob.c`.
+
+Example
+-------
+
     cd example
     cc -o nob nob.c
     ./nob
