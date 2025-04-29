@@ -514,11 +514,8 @@ bool compile_db_append(Cmd cmd) {
     }
 
     bool result = true;
-    char* json = tmp_sprintf(
-        "{\"directory\": \"%s\", "
-        "\"command\": \"%s\", "
-        "\"file\": \"%s\"},\n",
-        path, str.items, file);
+    char* json = tmp_sprintf("{\"directory\": \"%s\", \"command\": \"%s\", \"file\": \"%s\"},\n",
+                             path, str.items, file);
 
     if (file == NULL) {
         log_print("[WARN] could not find file in compile command %s", str.items);

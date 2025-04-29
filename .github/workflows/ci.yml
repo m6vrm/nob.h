@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  ci-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: build nob
+      run: |
+        cd example
+        cc -o nob nob.c -Wall -Wextra -Wpedantic
+    - name: build example
+      run: ./nob
+    - name: run example
+      run: ./build/example
+
+  ci-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: build nob
+      shell: cmd
+      run: |
+        cd example
+        clang -o nob.exe nob.c -Wall -Wextra -Wpedantic -D_CRT_SECURE_NO_WARNINGS
+    - name: build example
+      shell: cmd
+      run: |
+        set CC=clang
+        nob.exe
+    - name: run example
+      shell: cmd
+      run: call "build/example.exe"
+
+  ci-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: build nob
+      run: |
+        cd example
+        cc -o nob nob.c -Wall -Wextra -Wpedantic
+    - name: build example
+      run: ./nob
+    - name: run example
+      run: ./build/example
