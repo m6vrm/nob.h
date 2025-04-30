@@ -461,7 +461,7 @@ void rebuild_myself_many(int argc, char* argv[], const char** src, size_t src_co
 }
 
 void* tmp_alloc(size_t size) {
-    if (tmp.size + size >= sizeof(tmp.buf)) {
+    if (tmp.size + size > sizeof(tmp.buf)) {
         assert(false);
         return NULL;
     }
