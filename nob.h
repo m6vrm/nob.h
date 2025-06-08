@@ -283,7 +283,7 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
         CreateFile(dst, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
     if (dst_fd == INVALID_HANDLE_VALUE) {
         if (GetLastError() == ERROR_FILE_NOT_FOUND)
-            return 1;  // not exists == outdated
+            return 1;  // dst not exists, assume outdated
         log_print("[ERROR] could not open file %s", dst);
         return -1;
     }
@@ -300,8 +300,8 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
         HANDLE src_fd = CreateFile(srcs[i], GENERIC_READ, 0, NULL, OPEN_EXISTING,
                                    FILE_ATTRIBUTE_READONLY, NULL);
         if (src_fd == INVALID_HANDLE_VALUE) {
-            log_print("[ERROR] could not open file %s", srcs[i]);
-            return -1;
+            log_print("[WARN] could not open file %s", srcs[i]);
+            continue;  // src not exists, ignore
         }
 
         FILETIME src_time;
@@ -319,7 +319,7 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
     struct stat statbuf = {0};
     if (stat(dst, &statbuf) < 0) {
         if (errno == ENOENT)
-            return 1;  // not exists == outdated
+            return 1;  // dst not exists, assume outdated
         log_print("[ERROR] could not stat %s: %s", dst, strerror(errno));
         return -1;
     }
@@ -327,8 +327,8 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
     int dst_mtime = statbuf.st_mtime;
     for (size_t i = 0; i < srcs_count; ++i) {
         if (stat(srcs[i], &statbuf) < 0) {
-            log_print("[ERROR] could not stat %s: %s", srcs[i], strerror(errno));
-            return -1;
+            log_print("[WARN] could not stat %s: %s", srcs[i], strerror(errno));
+            continue;  // src not exists, ignore
         }
 
         if (statbuf.st_mtime > dst_mtime)
