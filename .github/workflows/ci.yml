@@ -18,7 +18,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: build nob
       run: |
-        c++ -o nob nob.c -std=c++20
         cc -o nob nob.c -Wall -Wextra -Wpedantic -std=c99
     - name: build example
       run: ./nob
@@ -44,7 +43,7 @@ jobs:
         nob.exe
     - name: run example
       shell: cmd
-      run: call build/example.exe
+      run: call "build/example.exe"
 
   ci-macos:
     runs-on: macos-latest
