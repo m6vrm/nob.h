@@ -17,7 +17,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build nob
-      run: cc -o nob nob.c -Wall -Wextra -Wpedantic
+      run: |
+        c++ -o nob nob.c -Wall -Wextra -Wpedantic -std=c++20
+        cc -o nob nob.c -Wall -Wextra -Wpedantic -std=c99
     - name: build example
       run: ./nob
     - name: run example
@@ -32,7 +34,9 @@ jobs:
     - uses: actions/checkout@v4
     - name: build nob
       shell: cmd
-      run: clang -o nob.exe nob.c -Wall -Wextra -Wpedantic -D_CRT_SECURE_NO_WARNINGS
+      run: |
+        clang++ -o nob.exe nob.c -Wall -Wextra -Wpedantic -std=c++20
+        clang -o nob.exe nob.c -Wall -Wextra -Wpedantic -src=c90
     - name: build example
       shell: cmd
       run: |
@@ -40,7 +44,7 @@ jobs:
         nob.exe
     - name: run example
       shell: cmd
-      run: call "build/example.exe"
+      run: call build/example.exe
 
   ci-macos:
     runs-on: macos-latest
@@ -50,7 +54,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build nob
-      run: cc -o nob nob.c -Wall -Wextra -Wpedantic
+      run: |
+        c++ -o nob nob.c -Wall -Wextra -Wpedantic -std=c++20
+        cc -o nob nob.c -Wall -Wextra -Wpedantic -std=c99
     - name: build example
       run: ./nob
     - name: run example
