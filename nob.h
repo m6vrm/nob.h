@@ -13,16 +13,21 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#ifndef PATH_MAX
-#define PATH_MAX MAX_PATH
-#endif  // PATH_MAX
-#else   // _WIN32
+#else  // _WIN32
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif  // _WIN32
+
+#ifndef PATH_MAX
+#ifdef _WIN32
+#define PATH_MAX MAX_PATH
+#else  // _WIN32
+#define PATH_MAX 256
+#endif  // _WIN32
+#endif  // PATH_MAX
 
 #ifdef __cplusplus
 #define DECLTYPE(expr) (decltype(expr))
