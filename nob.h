@@ -2,32 +2,15 @@
 #pragma once
 
 #include <assert.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#else  // _WIN32
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 #endif  // _WIN32
-
-#ifndef PATH_MAX
-#ifdef _WIN32
-#define PATH_MAX MAX_PATH
-#else  // _WIN32
-#define PATH_MAX 256
-#endif  // _WIN32
-#endif  // PATH_MAX
 
 #ifdef __cplusplus
 #define DECLTYPE(expr) (decltype(expr))
@@ -118,32 +101,12 @@ bool fs_mkdir_recursive(const char* path);
 bool fs_write(const char* path, const char* data, size_t size);
 bool fs_current_dir(char* dst, size_t size);
 
-#ifndef REBUILD_CMD
-#ifdef _WIN32
-#if defined(__GNUC__)  // _WIN32
-#define REBUILD_CMD(dst, src) "gcc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
-#elif defined(__clang__)  // __GNUC__
-#define REBUILD_CMD(dst, src) "clang", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
-#elif defined(_MSC_VER)  // __clang__
-#define REBUILD_CMD(dst, src) "cl.exe", tmp_sprintf("/Fe:%s", dst), src
-#endif  // _MSC_VER
-#else   // _WIN32
-#define REBUILD_CMD(dst, src) "cc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
-#endif  // _WIN32
-#endif  // _REBUILD_CMD
 #define rebuild_myself(argc, argv) rebuild_myself_with(argc, argv, )
 #define rebuild_myself_with(argc, argv, ...)                                   \
     rebuild_myself_many(argc, argv, ARRAY(const char*, __FILE__, __VA_ARGS__), \
                         ARRAY_COUNT(ARRAY(const char*, __FILE__, __VA_ARGS__)))
 void rebuild_myself_many(int argc, char* argv[], const char** srcs, size_t srcs_count);
 
-#ifndef TMP_BUF_CAP
-#define TMP_BUF_CAP 8 * 1024 * 1024
-#endif  // TMP_BUF_CAP
-static struct {
-    char buf[TMP_BUF_CAP];
-    size_t size;
-} tmp;
 void* tmp_alloc(size_t size);
 void tmp_reset(void);
 char* tmp_sprintf(const char* fmt, ...);
@@ -157,6 +120,49 @@ void log_print(const char* fmt, ...);
 #define args_shift(argc, argv) (assert((argc) > 0), (argc)--, *(argv)++)
 
 #ifdef NOB_IMPLEMENTATION
+
+#include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif  // _WIN32
+
+#ifndef PATH_MAX
+#ifdef _WIN32
+#define PATH_MAX MAX_PATH
+#else  // _WIN32
+#define PATH_MAX 256
+#endif  // _WIN32
+#endif  // PATH_MAX
+
+#ifndef REBUILD_CMD
+#ifdef _WIN32
+#if defined(__GNUC__)  // _WIN32
+#define REBUILD_CMD(dst, src) "gcc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
+#elif defined(__clang__)  // __GNUC__
+#define REBUILD_CMD(dst, src) "clang", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
+#elif defined(_MSC_VER)  // __clang__
+#define REBUILD_CMD(dst, src) "cl.exe", tmp_sprintf("/Fe:%s", dst), src
+#endif  // _MSC_VER
+#else   // _WIN32
+#define REBUILD_CMD(dst, src) "cc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
+#endif  // _WIN32
+#endif  // _REBUILD_CMD
+
+#ifndef TMP_BUF_CAP
+#define TMP_BUF_CAP 8 * 1024 * 1024
+#endif  // TMP_BUF_CAP
+static struct {
+    char buf[TMP_BUF_CAP];
+    size_t size;
+} tmp;
 
 void str_append_cstr(Str* str, const char* cstr) {
     assert(str != NULL);
