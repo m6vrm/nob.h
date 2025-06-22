@@ -10,6 +10,8 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else  // _WIN32
+#include <unistd.h>
 #endif  // _WIN32
 
 #ifdef __cplusplus
@@ -131,7 +133,6 @@ void log_print(const char* fmt, ...);
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #endif  // _WIN32
 
 #ifndef PATH_MAX
