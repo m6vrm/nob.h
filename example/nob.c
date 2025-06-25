@@ -47,6 +47,7 @@ int main(int argc, char* argv[]) {
     if (!proc_wait(cmd_exec_async(cmd)))
         return EXIT_FAILURE;
 
+    free(cmd.items);
     log_print("success");
 
     return EXIT_SUCCESS;

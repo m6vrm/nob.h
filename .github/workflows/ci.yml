@@ -9,54 +9,47 @@ on:
     - master
 
 jobs:
-  ci-linux:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: example
-    steps:
-    - uses: actions/checkout@v4
-    - name: build nob
-      run: |
-        cc -o nob nob.c -Wall -Wextra -Wpedantic -std=c99
-    - name: build example
-      run: ./nob
-    - name: run example
-      run: ./build/example
+  build:
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
+        compiler:
+        - name: cc
+          std: c99
+        - name: c++
+          std: c++20
+        - name: clang
+          std: c99
+        - name: clang++
+          std: c++20
+        build:
+        - example/nob
+        exclude:
+        - os: ubuntu-latest
+          compiler: { name: clang }
+        - os: ubuntu-latest
+          compiler: { name: clang++ }
+        - os: macos-latest
+          compiler: { name: clang }
+        - os: macos-latest
+          compiler: { name: clang++ }
+        - os: windows-latest
+          compiler: { name: cc }
+        - os: windows-latest
+          compiler: { name: c++ }
 
-  ci-windows:
-    runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: example
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: build nob
-      shell: cmd
-      run: |
-        clang++ -o nob.exe nob.c -std=c++20 -D_CRT_SECURE_NO_WARNINGS
-        clang -o nob.exe nob.c -Wall -Wextra -Wpedantic -std=c90 -D_CRT_SECURE_NO_WARNINGS
-    - name: build example
-      shell: cmd
-      run: |
-        set CC=clang
-        nob.exe
+      shell: bash
+      run: ${{ matrix.compiler.name }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.compiler.std }} -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined
+    - name: run nob
+      shell: bash
+      run: ./${{ matrix.build }}
     - name: run example
-      shell: cmd
-      run: call "build/example.exe"
-
-  ci-macos:
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: example
-    steps:
-    - uses: actions/checkout@v4
-    - name: build nob
-      run: |
-        c++ -o nob nob.c -std=c++20
-        cc -o nob nob.c -Wall -Wextra -Wpedantic -std=c99
-    - name: build example
-      run: ./nob
-    - name: run example
-      run: ./build/example
+      shell: bash
+      run: ./example/build/example
