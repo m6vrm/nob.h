@@ -17,32 +17,38 @@ jobs:
         - macos-latest
         - windows-latest
         compiler:
-        - cc
-        - c++
-        - clang
-        - clang++
+        - name: cc
+          std: c99
+        - name: c++
+          std: c++20
+        - name: clang
+          std: c99
+        - name: clang++
+          std: c++20
         build:
         - example/nob
         exclude:
         - os: ubuntu-latest
-          compiler: clang
+          compiler: { name: c++ }
         - os: ubuntu-latest
-          compiler: clang++
+          compiler: { name: clang }
+        - os: ubuntu-latest
+          compiler: { name: clang++ }
         - os: macos-latest
-          compiler: clang
+          compiler: { name: clang }
         - os: macos-latest
-          compiler: clang++
+          compiler: { name: clang++ }
         - os: windows-latest
-          compiler: cc
+          compiler: { name: cc }
         - os: windows-latest
-          compiler: c++
+          compiler: { name: c++ }
 
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: build nob
       shell: bash
-      run: ${{ matrix.compiler }} -o ${{ matrix.build }} ${{ matrix.build }}.c -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined
+      run: ${{ matrix.compiler.name }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.compiler.std }} -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined
     - name: run nob
       shell: bash
       run: ./${{ matrix.build }}
