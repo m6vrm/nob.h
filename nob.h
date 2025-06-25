@@ -268,6 +268,7 @@ Proc cmd_exec_async(Cmd cmd) {
     CloseHandle(proc_info.hThread);
     return proc_info.hProcess;
 #else   // _WIN32
+    free(str.items);
     Proc pid = fork();
     if (pid < 0) {
         log_print("[ERROR] could not fork process: %s", strerror(errno));
@@ -418,9 +419,8 @@ bool fs_write(const char* path, const char* data, size_t size) {
     }
 
 defer:
-    if (file != NULL) {
+    if (file != NULL)
         fclose(file);
-    }
     return result;
 }
 
