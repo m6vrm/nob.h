@@ -1,5 +1,6 @@
 // https://github.com/m6vrm/nob.h
-#pragma once
+#ifndef NOB_H
+#define NOB_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -120,6 +121,8 @@ bool compile_db_write(const char* path);
 void log_print(const char* fmt, ...);
 
 #define args_shift(argc, argv) (assert((argc) > 0), (argc)--, *(argv)++)
+
+#endif  // NOB_H
 
 #ifdef NOB_IMPLEMENTATION
 
