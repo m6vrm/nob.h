@@ -237,6 +237,8 @@ void cmd_str(Cmd cmd, Str* str) {
     assert(str != NULL);
 
     arr_foreach(cmd, const char*) {
+        if (*it == NULL)
+            continue;
         if (it != cmd.items)
             str_append_cstr(str, " ");
         if (strchr(*it, ' ') == NULL) {
@@ -252,8 +254,16 @@ void cmd_str(Cmd cmd, Str* str) {
 Proc cmd_exec_async(Cmd cmd) {
     assert(cmd.count > 0);
 
+    Cmd cmd_copy = {0};
+    arr_foreach(cmd, const char*) {
+        if (**it == '\0')
+            continue;
+        arr_append(&cmd_copy, *it);
+    }
+    arr_append(&cmd_copy, NULL);
+
     Str str = {0};
-    cmd_str(cmd, &str);
+    cmd_str(cmd_copy, &str);
     log_print("[INFO] CMD: %s", str.items);
 
 #ifdef _WIN32
@@ -277,9 +287,6 @@ Proc cmd_exec_async(Cmd cmd) {
         log_print("[ERROR] could not fork process: %s", strerror(errno));
         return PROC_INVALID;
     } else if (pid == 0) {  // child process
-        Cmd cmd_copy = {0};
-        arr_append_many(&cmd_copy, cmd.items, cmd.count);
-        arr_append(&cmd_copy, NULL);
         if (execvp(cmd_copy.items[0], (char**)cmd_copy.items) < 0) {
             log_print("[ERROR] could not exec process for %s: %s", cmd.items[0], strerror(errno));
             exit(EXIT_FAILURE);
