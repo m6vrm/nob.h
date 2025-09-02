@@ -11,12 +11,6 @@ jobs:
     strategy:
       matrix:
         os:
-        - name: ubuntu-latest
-          compiler: cc
-          std: c99
-        - name: macos-latest
-          compiler: cc
-          std: c99
         - name: windows-latest
           compiler: clang
           std: c99

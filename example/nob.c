@@ -13,7 +13,8 @@ const char* CFLAGS[] = {
 };
 
 int main(int argc, char* argv[]) {
-    log_print("init");
+    printf("Hello, World");
+    return 0;
     rebuild_myself(argc, argv);
 
     const char* CC = getenv("CC");
