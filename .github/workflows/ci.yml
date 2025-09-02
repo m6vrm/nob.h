@@ -11,15 +11,24 @@ jobs:
     strategy:
       matrix:
         os:
+        - name: ubuntu-latest
+          compiler: cc
+          std: c99
+        - name: macos-latest
+          compiler: cc
+          std: c99
+        - name: macos-latest
+          compiler: c++
+          std: c++20
         - name: windows-latest
           compiler: clang
           std: c99
-          env: env CC=clang
+          env: CC=clang
           define: -D_CRT_SECURE_NO_WARNINGS
         - name: windows-latest
           compiler: clang++
           std: c++20
-          env: env CC=clang
+          env: CC=clang
           define: -D_CRT_SECURE_NO_WARNINGS
         build:
         - nob
@@ -35,7 +44,7 @@ jobs:
       run: ${{ matrix.os.compiler }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.os.std }} -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined ${{ matrix.os.define }}
     - name: run nob
       shell: bash
-      run: ./${{ matrix.build }}.exe
+      run: ${{ matrix.os.env }} ./${{ matrix.build }}
     - name: run example
       shell: bash
       run: ./build/example
