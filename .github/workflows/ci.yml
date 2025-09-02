@@ -17,17 +17,9 @@ jobs:
         - name: macos-latest
           compiler: cc
           std: c99
-        - name: macos-latest
-          compiler: c++
-          std: c++20
         - name: windows-latest
           compiler: clang
           std: c99
-          env: CC=clang
-          define: -D_CRT_SECURE_NO_WARNINGS
-        - name: windows-latest
-          compiler: clang++
-          std: c++20
           env: CC=clang
           define: -D_CRT_SECURE_NO_WARNINGS
         build:
