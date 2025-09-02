@@ -33,7 +33,7 @@ jobs:
       run: |
         pwd
         ls
-        ${{ matrix.os.env }} ./${{ matrix.build }}
+        exec ./nob
     - name: run example
       shell: bash
       run: ./build/example
