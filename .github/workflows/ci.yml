@@ -30,7 +30,7 @@ jobs:
       run: ${{ matrix.os.compiler }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.os.std }} -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined ${{ matrix.os.define }}
     - name: run nob
       shell: cmd
-      run: call nob
+      run: start nob
     - name: run example
       shell: bash
       run: ./build/example
