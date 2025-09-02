@@ -33,7 +33,7 @@ jobs:
       run: |
         pwd
         ls
-        exec nob
+        exec $(pwd)/nob
     - name: run example
       shell: bash
       run: ./build/example
