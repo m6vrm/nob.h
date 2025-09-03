@@ -14,12 +14,15 @@ jobs:
         - name: ubuntu-latest
           compiler: cc
           std: c99
+          sanitize: -g3 -fsanitize=address,undefined
         - name: macos-latest
           compiler: cc
           std: c99
+          sanitize: -g3 -fsanitize=address,undefined
         - name: macos-latest
           compiler: c++
           std: c++20
+          sanitize: -g3 -fsanitize=address,undefined
         - name: windows-latest
           compiler: clang
           std: c99
@@ -41,7 +44,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: build nob
       shell: bash
-      run: ${{ matrix.os.compiler }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.os.std }} -Wall -Wextra -Wpedantic -g3 -fsanitize=address,undefined ${{ matrix.os.define }}
+      run: ${{ matrix.os.compiler }} -o ${{ matrix.build }} ${{ matrix.build }}.c -std=${{ matrix.os.std }} -Wall -Wextra -Wpedantic ${{ matrix.os.sanitize }} ${{ matrix.os.define }}
     - name: run nob
       shell: bash
       run: ${{ matrix.os.env }} ./${{ matrix.build }}

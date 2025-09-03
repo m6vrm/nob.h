@@ -261,6 +261,7 @@ Proc cmd_exec_async(Cmd cmd) {
         arr_append(&cmd_copy, *it);
     }
     arr_append(&cmd_copy, NULL);
+    assert(cmd_copy.count > 0);
 
     Str str = {0};
     cmd_str(cmd_copy, &str);
@@ -274,7 +275,6 @@ Proc cmd_exec_async(Cmd cmd) {
     PROCESS_INFORMATION proc_info;
     bool created =
         CreateProcessA(NULL, str.items, NULL, NULL, true, 0, NULL, NULL, &start_info, &proc_info);
-    free(str.items);
     if (!created) {
         log_print("[ERROR] could not create process for %s", cmd_copy.items[0]);
         RETURN_DEFER(PROC_INVALID);
@@ -283,7 +283,6 @@ Proc cmd_exec_async(Cmd cmd) {
     CloseHandle(proc_info.hThread);
     RETURN_DEFER(proc_info.hProcess);
 #else   // _WIN32
-    free(str.items);
     Proc pid = fork();
     if (pid < 0) {
         log_print("[ERROR] could not fork process: %s", strerror(errno));
@@ -292,6 +291,7 @@ Proc cmd_exec_async(Cmd cmd) {
         if (execvp(cmd_copy.items[0], (char**)cmd_copy.items) < 0) {
             log_print("[ERROR] could not exec process for %s: %s", cmd_copy.items[0],
                       strerror(errno));
+            free(str.items);
             free(cmd_copy.items);
             exit(EXIT_FAILURE);
         }
@@ -300,6 +300,7 @@ Proc cmd_exec_async(Cmd cmd) {
 #endif  // _WIN32
 
 defer:
+    free(str.items);
     free(cmd_copy.items);
     return result;
 }
