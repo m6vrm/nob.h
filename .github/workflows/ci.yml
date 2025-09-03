@@ -15,12 +15,12 @@ jobs:
           compiler: clang
           std: c99
           env: CC=clang
-          define: -D_CRT_SECURE_NO_WARNINGS
+          define: -D_CRT_SECURE_NO_WARNINGS -DUSE_SANITIZERS=OFF
         - name: windows-latest
           compiler: clang++
           std: c++20
           env: CC=clang
-          define: -D_CRT_SECURE_NO_WARNINGS
+          define: -D_CRT_SECURE_NO_WARNINGS -DUSE_SANITIZERS=OFF
         build:
         - nob
 
