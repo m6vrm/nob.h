@@ -239,7 +239,9 @@ void cmd_str(Cmd cmd, Str* str) {
     arr_foreach(cmd, const char*) {
         if (*it == NULL)
             continue;
-        if (it != cmd.items)
+        if (**it == '\0')
+            continue;
+        if (it != cmd.items && str->count > 0)
             str_append_cstr(str, " ");
         if (strchr(*it, ' ') == NULL) {
             str_append_cstr(str, *it);
