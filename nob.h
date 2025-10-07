@@ -65,7 +65,8 @@ typedef struct {
     size_t count;
     size_t capacity;
 } Str;
-void str_append_cstr(Str* str, const char* cstr);
+void str_append(Str* str, const char* cstr);
+void str_appendf(Str* str, const char* fmt, ...);
 
 #ifdef _WIN32
 typedef HANDLE Proc;
@@ -168,7 +169,7 @@ static struct {
     size_t size;
 } tmp;
 
-void str_append_cstr(Str* str, const char* cstr) {
+void str_append(Str* str, const char* cstr) {
     assert(str != NULL);
     assert(cstr != NULL);
 
@@ -178,6 +179,24 @@ void str_append_cstr(Str* str, const char* cstr) {
     arr_append_many(str, cstr, n);
     arr_append(str, '\0');
     str->count -= 1;
+}
+
+void str_appendf(Str* str, const char* fmt, ...) {
+    assert(str != NULL);
+    assert(fmt != NULL);
+
+    va_list args;
+    va_start(args, fmt);
+    int n = vsnprintf(NULL, 0, fmt, args);
+    assert(n >= 0);
+    va_end(args);
+
+    arr_reserve(str, str->count + n + 1);
+    char* dst = str->items + str->count;
+    va_start(args, fmt);
+    vsnprintf(dst, n + 1, fmt, args);
+    va_end(args);
+    str->count += n;
 }
 
 bool proc_wait(Proc proc) {
@@ -242,12 +261,12 @@ void cmd_str(Cmd cmd, Str* str) {
         if (**it == '\0')
             continue;
         if (it != cmd.items && str->count > 0)
-            str_append_cstr(str, " ");
+            str_append(str, " ");
         if (strchr(*it, ' ') == NULL) {
-            str_append_cstr(str, *it);
+            str_append(str, *it);
         } else {
             arr_append(str, '\'');
-            str_append_cstr(str, *it);
+            str_append(str, *it);
             arr_append(str, '\'');
         }
     }
@@ -525,8 +544,10 @@ char* tmp_sprintf(const char* fmt, ...) {
 }
 
 bool compile_db_append(Cmd cmd) {
+    bool result = true;
+
     if (compile_db.count == 0)
-        str_append_cstr(&compile_db, "[\n");
+        str_append(&compile_db, "[\n");
 
     char path[PATH_MAX];
     fs_current_dir(path, sizeof(path));
@@ -546,19 +567,13 @@ bool compile_db_append(Cmd cmd) {
         }
     }
 
-    bool result = true;
-    char* json = tmp_sprintf("{\"directory\": \"%s\", \"command\": \"%s\", \"file\": \"%s\"},\n",
-                             path, str.items, file);
-
     if (file == NULL) {
         log_print("[WARN] could not find file in compile command %s", str.items);
         RETURN_DEFER(false);
     }
 
-    if (json == NULL)
-        RETURN_DEFER(false);
-
-    str_append_cstr(&compile_db, json);
+    str_appendf(&compile_db, "{\"directory\": \"%s\", \"command\": \"%s\", \"file\": \"%s\"},\n",
+                path, str.items, file);
 
 defer:
     free(str.items);
@@ -573,7 +588,7 @@ bool compile_db_write(const char* path) {
 
     assert(compile_db.count >= 2);
     compile_db.count -= 2;  // remove trailing newline and comma
-    str_append_cstr(&compile_db, "\n]\n");
+    str_append(&compile_db, "\n]\n");
     return fs_write(path, compile_db.items, compile_db.count);
 }
 
