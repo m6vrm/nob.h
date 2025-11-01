@@ -7,8 +7,8 @@ clean:
 	$(RM) example/nob
 	$(RM) -r example/build
 
-.PHONY: format
-format:
+.PHONY: fmt
+fmt:
 	clang-format -i nob.h example/nob.c example/main.c
 
 example/build/example: example/nob
