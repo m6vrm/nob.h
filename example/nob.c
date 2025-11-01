@@ -12,7 +12,8 @@ const char* CFLAGS[] = {
     "-g",          //
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     rebuild_myself(argc, argv);
 
     const char* CC = getenv("CC");
@@ -25,7 +26,7 @@ int main(int argc, char* argv[]) {
     const char* obj = BUILD_DIR "main.o";
     fs_mkdir_recursive(obj);
     cmd_append(&cmd, CC, "-c", src, "-o", obj);
-    arr_append_many(&cmd, CFLAGS, ARRAY_COUNT(CFLAGS));
+    arr_append_many(&cmd, CFLAGS, countof(CFLAGS));
     compile_db_append(cmd);
 
     // compile only if obj is outdated

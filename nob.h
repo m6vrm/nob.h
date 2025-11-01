@@ -16,33 +16,27 @@
 #endif  // _WIN32
 
 #ifdef __cplusplus
-#define DECLTYPE(expr) (decltype(expr))
+#define type_of(expr) (decltype(expr))
 #else  // __cplusplus
-#define DECLTYPE(expr)
+#define type_of(expr)
 #endif  // __cplusplus
 
-#define RETURN_DEFER(value) \
-    do {                    \
-        result = (value);   \
-        goto defer;         \
-    } while (false)
+#define array(Type, ...) ((Type[]){__VA_ARGS__})
+#define countof(arr) (sizeof(arr) / sizeof(*(arr)))
+#define foreach(arr, Type) foreach_as(arr, it, Type)
+#define foreach_as(arr, item, Type) \
+    for (Type * (item) = (arr); (item) < (arr) + countof(arr); ++(item))
 
-#define ARRAY(Type, ...) ((Type[]){__VA_ARGS__})
-#define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(*(arr)))
-#define ARRAY_FOREACH(arr, Type) ARRAY_FOREACH_AS(arr, it, Type)
-#define ARRAY_FOREACH_AS(arr, item, Type) \
-    for (Type * (item) = (arr); (item) < (arr) + ARRAY_COUNT(arr); ++(item))
-
-#define arr_reserve(arr, new_capacity)                                              \
-    do {                                                                            \
-        if ((new_capacity) > (arr)->capacity) {                                     \
-            while ((new_capacity) > (arr)->capacity) {                              \
-                (arr)->capacity = (arr)->capacity == 0 ? 128 : (arr)->capacity * 2; \
-            }                                                                       \
-            (arr)->items = DECLTYPE((arr)->items)                                   \
-                realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items));     \
-            assert((arr)->items != NULL);                                           \
-        }                                                                           \
+#define arr_reserve(arr, new_capacity)                                             \
+    do {                                                                           \
+        if ((new_capacity) > (arr)->capacity) {                                    \
+            while ((new_capacity) > (arr)->capacity) {                             \
+                (arr)->capacity = (arr)->capacity == 0 ? 64 : (arr)->capacity * 2; \
+            }                                                                      \
+            (arr)->items = type_of((arr)->items)                                   \
+                realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items));    \
+            assert((arr)->items != NULL);                                          \
+        }                                                                          \
     } while (false)
 #define arr_append(arr, item)               \
     do {                                    \
@@ -59,6 +53,12 @@
 #define arr_foreach(arr, Type) arr_foreach_as(arr, it, Type)
 #define arr_foreach_as(arr, item, Type) \
     for (Type * (item) = (arr).items; (item) < (arr).items + (arr).count; ++(item))
+
+#define return_defer(value) \
+    do {                    \
+        result = (value);   \
+        goto defer;         \
+    } while (false)
 
 typedef struct {
     char* items;
@@ -80,8 +80,7 @@ typedef struct {
     size_t count;
     size_t capacity;
 } Procs;
-#define procs_wait(...) \
-    procs_wait_many(ARRAY(Proc, __VA_ARGS__), ARRAY_COUNT(ARRAY(Proc, __VA_ARGS__)))
+#define procs_wait(...) procs_wait_many(array(Proc, __VA_ARGS__), countof(array(Proc, __VA_ARGS__)))
 bool proc_wait(Proc proc);
 bool procs_wait_many(const Proc* procs, size_t procs_count);
 
@@ -90,15 +89,13 @@ typedef struct {
     size_t count;
     size_t capacity;
 } Cmd;
-#define cmd_append(cmd, ...)                              \
-    arr_append_many(cmd, ARRAY(const char*, __VA_ARGS__), \
-                    ARRAY_COUNT(ARRAY(const char*, __VA_ARGS__)))
+#define cmd_append(cmd, ...) \
+    arr_append_many(cmd, array(const char*, __VA_ARGS__), countof(array(const char*, __VA_ARGS__)))
 void cmd_str(Cmd cmd, Str* str);
 Proc cmd_exec_async(Cmd cmd);
 
-#define fs_outdated(dst, ...)                              \
-    fs_outdated_many(dst, ARRAY(const char*, __VA_ARGS__), \
-                     ARRAY_COUNT(ARRAY(const char*, __VA_ARGS__)))
+#define fs_outdated(dst, ...) \
+    fs_outdated_many(dst, array(const char*, __VA_ARGS__), countof(array(const char*, __VA_ARGS__)))
 int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count);
 bool fs_mkdir(const char* path);
 bool fs_mkdir_recursive(const char* path);
@@ -107,8 +104,8 @@ bool fs_current_dir(char* dst, size_t size);
 
 #define rebuild_myself(argc, argv) rebuild_myself_with(argc, argv, )
 #define rebuild_myself_with(argc, argv, ...)                                   \
-    rebuild_myself_many(argc, argv, ARRAY(const char*, __FILE__, __VA_ARGS__), \
-                        ARRAY_COUNT(ARRAY(const char*, __FILE__, __VA_ARGS__)))
+    rebuild_myself_many(argc, argv, array(const char*, __FILE__, __VA_ARGS__), \
+                        countof(array(const char*, __FILE__, __VA_ARGS__)))
 void rebuild_myself_many(int argc, char* argv[], const char** srcs, size_t srcs_count);
 
 void* tmp_alloc(size_t size);
@@ -140,36 +137,39 @@ void log_print(const char* fmt, ...);
 #endif  // _WIN32
 
 #ifndef PATH_MAX
-#ifdef _WIN32
+#ifdef MAX_PATH
 #define PATH_MAX MAX_PATH
-#else  // _WIN32
+#else  // MAX_PATH
 #define PATH_MAX 256
-#endif  // _WIN32
+#endif  // MAX_PATH
 #endif  // PATH_MAX
 
-#ifndef REBUILD_CMD
+#ifndef rebuild_cmd
 #ifdef _WIN32
-#if defined(__GNUC__)  // _WIN32
-#define REBUILD_CMD(dst, src) "gcc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
-#elif defined(__clang__)  // __GNUC__
-#define REBUILD_CMD(dst, src) "clang", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
-#elif defined(_MSC_VER)  // __clang__
-#define REBUILD_CMD(dst, src) "cl.exe", tmp_sprintf("/Fe:%s", dst), src
+#if defined(__GNUC__)  // __GNUC__
+#define rebuild_cmd(dst, src) \
+    "gcc", "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-o", dst, src
+#elif defined(__clang__)  // __clang__
+#define rebuild_cmd(dst, src) \
+    "clang", "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-o", dst, src
+#elif defined(_MSC_VER)  // _MSC_VER
+#define rebuild_cmd(dst, src) "cl.exe", tmp_sprintf("/Fe:%s", dst), src
 #endif  // _MSC_VER
 #else   // _WIN32
-#define REBUILD_CMD(dst, src) "cc", "-Wall", "-Wextra", "-Wpedantic", "-o", dst, src
+#define rebuild_cmd(dst, src) "cc", "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-o", dst, src
 #endif  // _WIN32
-#endif  // _REBUILD_CMD
+#endif  // rebuild_cmd
 
-#ifndef TMP_BUF_CAP
-#define TMP_BUF_CAP 8 * 1024 * 1024
+#ifndef TMP_BUF_SIZE
+#define TMP_BUF_SIZE 8 * 1024 * 1024
 #endif  // TMP_BUF_CAP
 static struct {
-    char buf[TMP_BUF_CAP];
-    size_t size;
-} tmp;
+    char data[TMP_BUF_SIZE];
+    size_t offset;
+} tmp_buf;
 
-void str_append(Str* str, const char* cstr) {
+void str_append(Str* str, const char* cstr)
+{
     assert(str != NULL);
     assert(cstr != NULL);
 
@@ -181,7 +181,8 @@ void str_append(Str* str, const char* cstr) {
     str->count -= 1;
 }
 
-void str_appendf(Str* str, const char* fmt, ...) {
+void str_appendf(Str* str, const char* fmt, ...)
+{
     assert(str != NULL);
     assert(fmt != NULL);
 
@@ -191,15 +192,16 @@ void str_appendf(Str* str, const char* fmt, ...) {
     assert(n >= 0);
     va_end(args);
 
-    arr_reserve(str, str->count + n + 1);
+    arr_reserve(str, str->count + (size_t)n + 1);
     char* dst = str->items + str->count;
     va_start(args, fmt);
-    vsnprintf(dst, n + 1, fmt, args);
+    vsnprintf(dst, (size_t)n + 1, fmt, args);
     va_end(args);
-    str->count += n;
+    str->count += (size_t)n;
 }
 
-bool proc_wait(Proc proc) {
+bool proc_wait(Proc proc)
+{
     if (proc == PROC_INVALID)
         return false;
 
@@ -245,17 +247,20 @@ bool proc_wait(Proc proc) {
     return true;
 }
 
-bool procs_wait_many(const Proc* procs, size_t procs_count) {
+bool procs_wait_many(const Proc* procs, size_t procs_count)
+{
     bool result = true;
     for (const Proc* proc = procs; proc < procs + procs_count; ++proc)
         result = proc_wait(*proc) && result;
     return result;
 }
 
-void cmd_str(Cmd cmd, Str* str) {
+void cmd_str(Cmd cmd, Str* str)
+{
     assert(str != NULL);
 
-    arr_foreach(cmd, const char*) {
+    arr_foreach(cmd, const char*)
+    {
         if (*it == NULL)
             continue;
         if (**it == '\0')
@@ -272,11 +277,13 @@ void cmd_str(Cmd cmd, Str* str) {
     }
 }
 
-Proc cmd_exec_async(Cmd cmd) {
+Proc cmd_exec_async(Cmd cmd)
+{
     assert(cmd.count > 0);
 
     Cmd cmd_copy = {0};
-    arr_foreach(cmd, const char*) {
+    arr_foreach(cmd, const char*)
+    {
         if (**it == '\0')
             continue;
         arr_append(&cmd_copy, *it);
@@ -286,7 +293,7 @@ Proc cmd_exec_async(Cmd cmd) {
 
     Str str = {0};
     cmd_str(cmd_copy, &str);
-    log_print("[INFO] CMD: %s", str.items);
+    log_print("[CMD  ] %s", str.items);
 
     Proc result = PROC_INVALID;
 
@@ -298,16 +305,16 @@ Proc cmd_exec_async(Cmd cmd) {
         CreateProcessA(NULL, str.items, NULL, NULL, true, 0, NULL, NULL, &start_info, &proc_info);
     if (!created) {
         log_print("[ERROR] could not create process for %s", cmd_copy.items[0]);
-        RETURN_DEFER(PROC_INVALID);
+        return_defer(PROC_INVALID);
     }
 
     CloseHandle(proc_info.hThread);
-    RETURN_DEFER(proc_info.hProcess);
+    return_defer(proc_info.hProcess);
 #else   // _WIN32
     Proc pid = fork();
     if (pid < 0) {
         log_print("[ERROR] could not fork process: %s", strerror(errno));
-        RETURN_DEFER(PROC_INVALID);
+        return_defer(PROC_INVALID);
     } else if (pid == 0) {  // child process
         if (execvp(cmd_copy.items[0], (char**)cmd_copy.items) < 0) {
             log_print("[ERROR] could not exec process for %s: %s", cmd_copy.items[0],
@@ -317,7 +324,7 @@ Proc cmd_exec_async(Cmd cmd) {
             exit(EXIT_FAILURE);
         }
     }
-    RETURN_DEFER(pid);
+    return_defer(pid);
 #endif  // _WIN32
 
 defer:
@@ -326,7 +333,8 @@ defer:
     return result;
 }
 
-int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
+int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count)
+{
     assert(dst != NULL);
     assert(srcs != NULL);
     assert(srcs_count > 0);
@@ -353,7 +361,7 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
         HANDLE src_fd = CreateFile(srcs[i], GENERIC_READ, 0, NULL, OPEN_EXISTING,
                                    FILE_ATTRIBUTE_READONLY, NULL);
         if (src_fd == INVALID_HANDLE_VALUE) {
-            log_print("[WARN] could not open file %s", srcs[i]);
+            log_print("[WARN ] could not open file %s", srcs[i]);
             continue;  // src not exists, ignore
         }
 
@@ -377,10 +385,10 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
         return -1;
     }
 
-    int dst_mtime = statbuf.st_mtime;
+    long dst_mtime = statbuf.st_mtime;
     for (size_t i = 0; i < srcs_count; ++i) {
         if (stat(srcs[i], &statbuf) < 0) {
-            log_print("[WARN] could not stat %s: %s", srcs[i], strerror(errno));
+            log_print("[WARN ] could not stat %s: %s", srcs[i], strerror(errno));
             continue;  // src not exists, ignore
         }
 
@@ -389,11 +397,12 @@ int fs_outdated_many(const char* dst, const char** srcs, size_t srcs_count) {
     }
 #endif  // _WIN32
 
-    log_print("[INFO] %s is up-to-date", dst);
+    log_print("[INFO ] %s is up-to-date", dst);
     return 0;
 }
 
-bool fs_mkdir(const char* path) {
+bool fs_mkdir(const char* path)
+{
     assert(path != NULL);
 
 #ifdef _WIN32
@@ -412,11 +421,12 @@ bool fs_mkdir(const char* path) {
     }
 #endif  // _WIN32
 
-    log_print("[INFO] create directory %s", path);
+    log_print("[INFO ] create directory %s", path);
     return true;
 }
 
-bool fs_mkdir_recursive(const char* path) {
+bool fs_mkdir_recursive(const char* path)
+{
     assert(path != NULL);
 
     char buf[PATH_MAX];
@@ -434,7 +444,8 @@ bool fs_mkdir_recursive(const char* path) {
     return true;
 }
 
-bool fs_write(const char* path, const char* data, size_t size) {
+bool fs_write(const char* path, const char* data, size_t size)
+{
     assert(path != NULL);
     assert(data != NULL);
 
@@ -444,14 +455,14 @@ bool fs_write(const char* path, const char* data, size_t size) {
     FILE* file = fopen(path, "wb");
     if (file == NULL) {
         log_print("[ERROR] could not open file %s for writing: %s", path, strerror(errno));
-        RETURN_DEFER(false);
+        return_defer(false);
     }
 
     while (size > 0) {
         size_t n = fwrite(buf, 1, size, file);
         if (ferror(file)) {
             log_print("[ERROR] error writing file %s: %s", path, strerror(errno));
-            RETURN_DEFER(false);
+            return_defer(false);
         }
 
         size -= n;
@@ -464,8 +475,10 @@ defer:
     return result;
 }
 
-bool fs_current_dir(char* dst, size_t size) {
+bool fs_current_dir(char* dst, size_t size)
+{
     assert(dst != NULL);
+    assert(size > 0);
 
 #ifdef _WIN32
     if (GetCurrentDirectory(size, dst) == 0) {
@@ -482,7 +495,8 @@ bool fs_current_dir(char* dst, size_t size) {
     return true;
 }
 
-void rebuild_myself_many(int argc, char* argv[], const char** src, size_t src_count) {
+void rebuild_myself_many(int argc, char* argv[], const char** src, size_t src_count)
+{
     assert(src != NULL);
     assert(src_count > 0);
 
@@ -494,17 +508,17 @@ void rebuild_myself_many(int argc, char* argv[], const char** src, size_t src_co
         return;
     }
 
-    log_print("[INFO] rebuild myself");
+    log_print("[INFO ] rebuild myself");
 
     Cmd cmd = {0};
-    cmd_append(&cmd, REBUILD_CMD(dst, src[0]));
+    cmd_append(&cmd, rebuild_cmd(dst, src[0]));
     Proc proc = cmd_exec_async(cmd);
     if (!proc_wait(proc))
         exit(EXIT_FAILURE);
 
     cmd.count = 0;
     cmd_append(&cmd, dst);
-    arr_append_many(&cmd, argv, argc);
+    arr_append_many(&cmd, argv, (size_t)argc);
     proc = cmd_exec_async(cmd);
     if (!proc_wait(proc))
         exit(EXIT_FAILURE);
@@ -512,22 +526,25 @@ void rebuild_myself_many(int argc, char* argv[], const char** src, size_t src_co
     exit(EXIT_SUCCESS);
 }
 
-void* tmp_alloc(size_t size) {
-    if (tmp.size + size > sizeof(tmp.buf)) {
+void* tmp_alloc(size_t size)
+{
+    if (tmp_buf.offset + size > sizeof(tmp_buf.data)) {
         assert(false);
         return NULL;
     }
 
-    void* buf = tmp.buf + tmp.size;
-    tmp.size += size;
-    return buf;
+    void* ptr = tmp_buf.data + tmp_buf.offset;
+    tmp_buf.offset += size;
+    return ptr;
 }
 
-void tmp_reset(void) {
-    tmp.size = 0;
+void tmp_reset(void)
+{
+    tmp_buf.offset = 0;
 }
 
-char* tmp_sprintf(const char* fmt, ...) {
+char* tmp_sprintf(const char* fmt, ...)
+{
     assert(fmt != NULL);
 
     va_list args;
@@ -536,14 +553,17 @@ char* tmp_sprintf(const char* fmt, ...) {
     assert(n >= 0);
     va_end(args);
 
-    char* result = (char*)tmp_alloc(n + 1);
+    char* result = (char*)tmp_alloc((size_t)n + 1);
     va_start(args, fmt);
-    vsnprintf(result, n + 1, fmt, args);
+    vsnprintf(result, (size_t)n + 1, fmt, args);
     va_end(args);
     return result;
 }
 
-bool compile_db_append(Cmd cmd) {
+bool compile_db_append(Cmd cmd)
+{
+    assert(cmd.count > 0);
+
     bool result = true;
 
     if (compile_db.count == 0)
@@ -555,7 +575,8 @@ bool compile_db_append(Cmd cmd) {
     cmd_str(cmd, &str);
 
     const char* file = NULL;
-    arr_foreach(cmd, const char*) {
+    arr_foreach(cmd, const char*)
+    {
         const char* ext = strrchr(*it, '.');
         if (ext == NULL)
             continue;
@@ -568,8 +589,8 @@ bool compile_db_append(Cmd cmd) {
     }
 
     if (file == NULL) {
-        log_print("[WARN] could not find file in compile command %s", str.items);
-        RETURN_DEFER(false);
+        log_print("[WARN ] could not find file in compile command %s", str.items);
+        return_defer(false);
     }
 
     str_appendf(&compile_db, "{\"directory\": \"%s\", \"command\": \"%s\", \"file\": \"%s\"},\n",
@@ -580,7 +601,8 @@ defer:
     return result;
 }
 
-bool compile_db_write(const char* path) {
+bool compile_db_write(const char* path)
+{
     assert(path != NULL);
 
     if (compile_db.count == 0)
@@ -592,7 +614,8 @@ bool compile_db_write(const char* path) {
     return fs_write(path, compile_db.items, compile_db.count);
 }
 
-void log_print(const char* fmt, ...) {
+void log_print(const char* fmt, ...)
+{
     assert(fmt != NULL);
 
     va_list args;
