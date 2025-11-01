@@ -168,8 +168,7 @@ static struct {
     size_t offset;
 } tmp_buf;
 
-void str_append(Str* str, const char* cstr)
-{
+void str_append(Str* str, const char* cstr) {
     assert(str != NULL);
     assert(cstr != NULL);
 
@@ -181,8 +180,7 @@ void str_append(Str* str, const char* cstr)
     str->count -= 1;
 }
 
-void str_appendf(Str* str, const char* fmt, ...)
-{
+void str_appendf(Str* str, const char* fmt, ...) {
     assert(str != NULL);
     assert(fmt != NULL);
 
@@ -192,16 +190,15 @@ void str_appendf(Str* str, const char* fmt, ...)
     assert(n >= 0);
     va_end(args);
 
-    arr_reserve(str, str->count + (size_t)n + 1);
+    arr_reserve(str, str->count + n + 1);
     char* dst = str->items + str->count;
     va_start(args, fmt);
-    vsnprintf(dst, (size_t)n + 1, fmt, args);
+    vsnprintf(dst, n + 1, fmt, args);
     va_end(args);
-    str->count += (size_t)n;
+    str->count += n;
 }
 
-bool proc_wait(Proc proc)
-{
+bool proc_wait(Proc proc) {
     if (proc == PROC_INVALID)
         return false;
 
@@ -560,10 +557,7 @@ char* tmp_sprintf(const char* fmt, ...)
     return result;
 }
 
-bool compile_db_append(Cmd cmd)
-{
-    assert(cmd.count > 0);
-
+bool compile_db_append(Cmd cmd) {
     bool result = true;
 
     if (compile_db.count == 0)
