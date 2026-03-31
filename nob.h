@@ -16,9 +16,9 @@
 #endif  // _WIN32
 
 #ifdef __cplusplus
-#define type_of(expr) (decltype(expr))
+#define cast(expr) (decltype(expr))
 #else  // __cplusplus
-#define type_of(expr)
+#define cast(expr)
 #endif  // __cplusplus
 
 #define array(Type, ...) ((Type[]){__VA_ARGS__})
@@ -27,16 +27,16 @@
 #define foreach_as(arr, item, Type) \
     for (Type * (item) = (arr); (item) < (arr) + countof(arr); ++(item))
 
-#define arr_reserve(arr, new_capacity)                                             \
-    do {                                                                           \
-        if ((new_capacity) > (arr)->capacity) {                                    \
-            while ((new_capacity) > (arr)->capacity) {                             \
-                (arr)->capacity = (arr)->capacity == 0 ? 64 : (arr)->capacity * 2; \
-            }                                                                      \
-            (arr)->items = type_of((arr)->items)                                   \
-                realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items));    \
-            assert((arr)->items != NULL);                                          \
-        }                                                                          \
+#define arr_reserve(arr, new_capacity)                                                             \
+    do {                                                                                           \
+        if ((new_capacity) > (arr)->capacity) {                                                    \
+            while ((new_capacity) > (arr)->capacity) {                                             \
+                (arr)->capacity = (arr)->capacity == 0 ? 64 : (arr)->capacity * 2;                 \
+            }                                                                                      \
+            (arr)->items =                                                                         \
+                cast((arr)->items) realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items)); \
+            assert((arr)->items != NULL);                                                          \
+        }                                                                                          \
     } while (false)
 #define arr_append(arr, item)               \
     do {                                    \
